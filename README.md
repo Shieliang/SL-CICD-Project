@@ -19,6 +19,7 @@ This project demonstrates a production-grade, highly available containerized web
 ### 2. Zero-Downtime Deployments (Rolling Updates)
 - Engineered a robust GitHub Actions workflow that automatically builds, tags, and pushes Docker images to Amazon ECR upon every `main` branch commit.
 - Utilized the unique **Git Commit SHA** (`github.sha`) as the immutable image tag, forcing Kubernetes to reliably trigger seamless **Rolling Updates** without service interruption.
+- Decoupled sensitive AWS Account IDs from Kubernetes manifests using dynamic image injection.
 
 ### 3. Auto-Scaling & Self-Healing (HPA)
 - Successfully deployed the Kubernetes **Metrics Server**, implementing a custom TLS bypass patch (`--kubelet-insecure-tls`) to resolve native AWS VPC CNI communication bottlenecks.
@@ -35,34 +36,43 @@ This project demonstrates a production-grade, highly available containerized web
 - `kubectl` and `docker` installed locally.
 - GitHub Repository Secrets configured (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`).
 
-### 1. Provision the Infrastructure (Initial Setup)
-Create the EKS cluster and VPC networking from scratch using CloudFormation via the Makefile:
+### 1. 🌟 One-Click Environment Bootstrapping
+Provision the entire underlying infrastructure (VPC, EKS Cluster, ECR Repository) and initialize monitoring components in a strict dependency order:
 ```bash
-make deploy-cluster
+make deploy-all
 ```
-> Note: CloudFormation stack provisioning typically takes 15-20 minutes.
+> Note: CloudFormation stack provisioning typically takes 15-20 minutes. Grab a coffee! ☕
 
 ### 2. Trigger the CI/CD Pipeline
-Once the cluster is ready, push your code to trigger GitHub Actions to build and deploy your app:
+Once the infrastructure and metrics are ready, push your code. GitHub Actions will automatically build the image, push it to ECR, and deploy it to EKS:
 ```bash
-make git-push m="feat: initial application deployment"
+make git-push m="feat: initial application deployment via CI/CD"
 ```
 
-### 3. Monitor Cluster Health
-Check the status of Pods, Services, and HPA real-time metrics:
+### 3. ⚔️ Stress Testing & HPA Monitoring
+To validate the auto-scaling architecture, trigger a massive traffic load:
+```bash
+make stress-test
+```
+While the stress test is running, open a new terminal tab and monitor the real-time cluster health, Pod scaling, and CPU utilization:
 ```bash
 make status
 ```
+You will observe the HPA triggering Pod scale-ups as the CPU load crosses the 50% threshold.
 
-### 4. Clean Up Resources (Cost Optimization)
-To avoid incurring unnecessary AWS charges, tear down the entire EKS cluster, LoadBalancers, and underlying CloudFormation stacks:
+> Note: If you want to quit the stress test, press "Ctrl + C" in the terminal.
+
+### 4. ☢️ Clean Up Resources (Nuclear Option)
+To avoid incurring unnecessary AWS charges, tear down the entire application, ECR, EKS cluster, and VPC networking:
 ```bash
-make destroy-cluster
+make destroy-all
 ```
 
 ### 5. 🔄 Redeploying After Destruction
-Because the infrastructure is entirely defined as code, reviving the project is effortless. To rebuild the exact same environment after a teardown:
+Because the infrastructure is entirely defined as code, reviving the project is effortless. To rebuild the exact same environment:
 
-Run `make deploy-cluster` to provision the AWS infrastructure again.
-
-Go to the GitHub repository, navigate to Actions, select the latest workflow run, and click "Re-run all jobs" to deploy the application into the fresh cluster.
+Run the following Makefile command to provision the infrastructure and monitoring radar:
+```bash
+make deploy-all
+```
+Go to your GitHub repository, navigate to Actions, select the latest workflow run, and click "Re-run all jobs" to deploy the application into the fresh cluster.

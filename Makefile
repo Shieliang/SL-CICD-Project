@@ -116,7 +116,7 @@ status:
 	@echo "\n2. 资源消耗 (Top):"
 	kubectl top pods || echo "雷达正在启动中，请稍后再试..."
 	@echo "\n3. 自动扩容状态 (HPA):"
-	kubectl get hpa
+	kubectl get hpa -w
 	@echo "================================="
 
 # ======== 第六层：一键代码提交与触发 CI/CD ========
@@ -129,3 +129,31 @@ git-push:
 	@echo "🚀 3/3 正在推送到 GitHub，准备触发自动化流水线..."
 	git push
 	@echo "✅ 推送成功！现在请切到浏览器，去 GitHub Actions 页面看机器人干活吧！"
+
+# ======== 🌟 终极创世按钮：一键拉起所有底层基础设施 ========
+deploy-all:
+	@echo "🌟 开始执行创世程序：一键拉起完整生产环境！"
+	@echo "⏳ 预计耗时 20-25 分钟，请耐心等待..."
+	$(MAKE) deploy-network
+	$(MAKE) deploy-cluster
+	$(MAKE) deploy-ecr
+	$(MAKE) deploy-metrics
+	@echo "🎉 创世成功！网络、集群、ECR 车库和监控雷达已全部就绪！"
+	@echo "👉 下一步：修改你的代码，然后运行 'make git-push' 交给机器人部署应用吧！"
+	
+# ======== ☢️ 终极核弹按钮：一键彻底销毁所有资源 ========
+destroy-all:
+	@echo "🚨 警告：正在执行核弹级销毁程序！所有资源将灰飞烟灭！"
+	@echo "🗑️ 1/4 正在下线 Kubernetes 应用并释放 LoadBalancer..."
+	-kubectl delete -f k8s/ || true
+	@echo "💥 2/4 正在强制销毁 ECR 镜像仓库..."
+	-aws ecr delete-repository --repository-name $(ECR_REPO_NAME) --region $(AWS_REGION) --force || true
+	@echo "🔥 3/4 正在触发 EKS 集群销毁 (此步通常耗时 10-15 分钟，去喝杯水吧)..."
+	aws cloudformation delete-stack --stack-name $(STACK_NAME_CLUSTER) --region $(AWS_REGION)
+	@echo "⏳ 正在监控集群销毁状态，请耐心等待，切勿中断终端..."
+	aws cloudformation wait stack-delete-complete --stack-name $(STACK_NAME_CLUSTER) --region $(AWS_REGION)
+	@echo "🌪️ 4/4 集群已彻底阵亡，正在销毁底层网络 (VPC, Subnets)..."
+	aws cloudformation delete-stack --stack-name $(STACK_NAME_NETWORK) --region $(AWS_REGION)
+	@echo "⏳ 正在监控网络销毁状态..."
+	aws cloudformation wait stack-delete-complete --stack-name $(STACK_NAME_NETWORK) --region $(AWS_REGION)
+	@echo "✅ 核弹打击完毕！所有云端资源已彻底清空，你的钱包现在 100% 安全！💸"
