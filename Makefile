@@ -15,8 +15,7 @@ AWS_ACCOUNT_ID := $(shell aws sts get-caller-identity --query Account --output t
 ECR_URI ?= $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME)
 IMAGE_TAG ?= v3
 
-.PHONY: deploy-network destroy-network deploy-cluster destroy-cluster deploy-ecr destroy-ecr build-image push-image deploy-app destroy-app deploy-metrics stress-test status git-push
-
+.PHONY: deploy-network destroy-network deploy-cluster destroy-cluster deploy-ecr destroy-ecr build-image push-image deploy-app destroy-app deploy-metrics stress-test status git-push get-url deploy-all destroy-all
 # 一键拉起网络基础设施
 deploy-network:
 	@echo "🚀 正在 AWS 创建底层网络 (VPC, Subnets)..."
@@ -131,6 +130,16 @@ git-push:
 	@echo "🚀 3/3 正在推送到 GitHub，准备触发自动化流水线..."
 	git push
 	@echo "✅ 推送成功！现在请切到浏览器，去 GitHub Actions 页面看机器人干活吧！"
+
+# ======== 获取网站专属链接 ========
+get-url:
+	@echo "🔍 正在向 AWS 索取你的公网链接..."
+	@URL=$$(kubectl get svc sl-cicd-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null); \
+	if [ -z "$$URL" ]; then \
+		echo "⏳ AWS 还在努力分配中 (<pending>)，通常需要 2 分钟，请稍后再试..."; \
+	else \
+		echo "✅ 网站已上线！直接点击访问 👉 http://$$URL"; \
+	fi
 
 # ======== 🌟 终极创世按钮：一键拉起所有底层基础设施 ========
 deploy-all:

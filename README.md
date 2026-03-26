@@ -49,7 +49,14 @@ Once the infrastructure and metrics are ready, push your code. GitHub Actions wi
 make git-push m="feat: initial application deployment via CI/CD"
 ```
 
-### 3. ⚔️ Stress Testing & HPA Monitoring
+### 3. 🌐 Access the Live Application
+After the GitHub Actions workflow completes successfully, retrieve the public-facing URL of your application:
+```bash
+make get-url
+```
+> Note: If AWS is still provisioning the LoadBalancer, the script will notify you to wait gracefully. Try again in 1-2 minutes!
+
+### 4. ⚔️ Stress Testing & HPA Monitoring
 To validate the auto-scaling architecture, trigger a massive traffic load:
 ```bash
 make stress-test
@@ -62,13 +69,13 @@ You will observe the HPA triggering Pod scale-ups as the CPU load crosses the 50
 
 > Note: If you want to quit the stress test, press "Ctrl + C" in the terminal.
 
-### 4. ☢️ Clean Up Resources (Nuclear Option)
+### 5. ☢️ Clean Up Resources (Nuclear Option)
 To avoid incurring unnecessary AWS charges, tear down the entire application, ECR, EKS cluster, and VPC networking:
 ```bash
 make destroy-all
 ```
 
-### 5. 🔄 Redeploying After Destruction
+### 6. 🔄 Redeploying After Destruction
 Because the infrastructure is entirely defined as code, reviving the project is effortless. To rebuild the exact same environment:
 
 Run the following Makefile command to provision the infrastructure and monitoring radar:
