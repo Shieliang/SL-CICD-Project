@@ -43,6 +43,8 @@ deploy-cluster:
 		--stack-name $(STACK_NAME_CLUSTER) \
 		--region $(AWS_REGION) \
 		--capabilities CAPABILITY_NAMED_IAM
+	@echo "🔗 正在更新本地 kubectl 配置，连接到新生集群..."
+	aws eks update-kubeconfig --region $(AWS_REGION) --name $(STACK_NAME_CLUSTER)
 	@echo "✅ EKS 集群部署完成！"
 
 destroy-cluster:
@@ -140,7 +142,7 @@ deploy-all:
 	$(MAKE) deploy-metrics
 	@echo "🎉 创世成功！网络、集群、ECR 车库和监控雷达已全部就绪！"
 	@echo "👉 下一步：修改你的代码，然后运行 'make git-push' 交给机器人部署应用吧！"
-	
+
 # ======== ☢️ 终极核弹按钮：一键彻底销毁所有资源 ========
 destroy-all:
 	@echo "🚨 警告：正在执行核弹级销毁程序！所有资源将灰飞烟灭！"
