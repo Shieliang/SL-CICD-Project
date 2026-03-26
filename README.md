@@ -83,3 +83,12 @@ Run the following Makefile command to provision the infrastructure and monitorin
 make deploy-all
 ```
 Go to your GitHub repository, navigate to Actions, select the latest workflow run, and click "Re-run all jobs" to deploy the application into the fresh cluster.
+
+---
+
+## ☕ Support My Work
+If you found this project helpful and want to support my cloud engineering journey, feel free to buy me a coffee!
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/shieliang22)
+
+---
