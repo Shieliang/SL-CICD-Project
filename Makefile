@@ -14,7 +14,7 @@ AWS_ACCOUNT_ID ?= 987762561422
 ECR_URI ?= $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME)
 IMAGE_TAG ?= v3
 
-.PHONY: deploy-network destroy-network deploy-cluster destroy-cluster deploy-ecr destroy-ecr build-image push-image deploy-app destroy-app deploy-metrics stress-test status
+.PHONY: deploy-network destroy-network deploy-cluster destroy-cluster deploy-ecr destroy-ecr build-image push-image deploy-app destroy-app deploy-metrics stress-test status git-push
 
 # 一键拉起网络基础设施
 deploy-network:
@@ -115,3 +115,14 @@ status:
 	@echo "\n3. 自动扩容状态 (HPA):"
 	kubectl get hpa
 	@echo "================================="
+
+# ======== 第六层：一键代码提交与触发 CI/CD ========
+git-push:
+	@echo "📦 1/3 正在将所有更改添加到 Git 暂存区..."
+	git add .
+	@echo "📝 2/3 正在提交代码..."
+	@# 这里的逻辑是：如果你传入了 m="xxx"，就用你的，否则用默认的 "Auto commit: trigger CI/CD"
+	git commit -m "$(if $(m),$(m),Auto commit: trigger CI/CD pipeline)"
+	@echo "🚀 3/3 正在推送到 GitHub，准备触发自动化流水线..."
+	git push
+	@echo "✅ 推送成功！现在请切到浏览器，去 GitHub Actions 页面看机器人干活吧！"

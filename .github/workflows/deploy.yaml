@@ -25,7 +25,7 @@ jobs:
     # 步骤 3：登录到 AWS ECR 镜像仓库
     - name: 🐳 Login to Amazon ECR
       id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+      uses: aws-actions/amazon-ecr-login@v2
 
     # 步骤 4：极其硬核的动态打包！(不再用写死的 v2，而是用每次提交的唯一哈希值做版本号)
     - name: 🔨 Build, Tag, and Push Docker Image
