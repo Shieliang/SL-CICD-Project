@@ -1,0 +1,28 @@
+apiVersion: apps/v1 #这个是 Kubernetes API 的版本，Deployment 是在 apps/v1 版本中定义的
+kind: Deployment
+metadata:
+  name: sl-cicd-app
+spec:
+  #replicas: 2 # 这个是硬性的，如果要自动Scale需要加入 HorizontalPodAutoscaler，并且删除这个字段
+  selector:
+    matchLabels:
+      app: sl-cicd-app
+  template:
+    metadata:
+      labels:
+        app: sl-cicd-app
+    spec:
+      containers:
+      - name: web # 这个名字随便起，可以是pokemon或其他的，建议简单易懂你这个是什么应用的
+        # 这里就是你刚才推送到 ECR 的镜像地址！
+        image: 987762561422.dkr.ecr.us-east-1.amazonaws.com/sl-cicd-repo:v3
+        ports:
+        - containerPort: 80
+        #告诉 K8s 这个容器的资源底线和上限
+        resources:
+          requests:
+            cpu: "100m"    # 基础需求：0.1个CPU
+            memory: "64Mi" # 基础内存
+          limits:
+            cpu: "250m"    # 极限限制：0.25个CPU（防止一个容器把整台服务器卡死）
+            memory: "128Mi"

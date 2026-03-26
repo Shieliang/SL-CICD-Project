@@ -1,0 +1,100 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SL-CI/CD-Project: Base Network for EKS (VPC, Subnets, IGW)'
+
+Resources:
+  # 1. 创建 VPC (虚拟私有云，我们的专属网络隔离区)
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: sl-cicd-vpc
+
+  # 2. 创建 Internet Gateway (让 VPC 能上网的大门)
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: sl-cicd-igw
+
+  # 3. 把大门安装到 VPC 上
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # 4. 创建公有子网 A (位于可用区 1)
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs ''] # 自动选择第一个可用区
+      MapPublicIpOnLaunch: true # 这里的机器会自动分配公网 IP
+      Tags:
+        - Key: Name
+          Value: sl-cicd-public-subnet-1
+        - Key: kubernetes.io/role/elb
+          Value: '1' # 这个 Tag 很关键！以后 K8s 靠它来识别在哪里创建外部负载均衡器
+
+  # 5. 创建公有子网 B (位于可用区 2，保证高可用)
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs ''] # 自动选择第二个可用区
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: sl-cicd-public-subnet-2
+        - Key: kubernetes.io/role/elb
+          Value: '1'
+
+  # 6. 配置路由表 (告诉子网里的流量，想上网就走 Internet Gateway)
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: sl-cicd-public-rt
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0 # 代表所有外部网络流量
+      GatewayId: !Ref InternetGateway
+
+  # 7. 把路由表和我们的两个子网绑定起来
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+# 输出结果，方便后面的 EKS 模板直接引用这些网络 ID
+Outputs:
+  VpcId:
+    Description: The ID of the VPC
+    Value: !Ref VPC
+    Export:
+      Name: sl-cicd-VpcId
+  PublicSubnets:
+    Description: The IDs of the public subnets
+    Value: !Join [",", [!Ref PublicSubnet1, !Ref PublicSubnet2]]
+    Export:
+      Name: sl-cicd-PublicSubnets

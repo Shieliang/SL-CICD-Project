@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SL-CI/CD-Project: EKS Cluster and EC2 NodeGroup'
+
+Resources:
+  # 1. 给 EKS 大脑 (Control Plane) 发放通行证 (IAM Role)
+  EKSClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: eks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+
+  # 2. 创建 EKS 集群 (大脑)
+  EKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: sl-cicd-cluster
+      RoleArn: !GetAtt EKSClusterRole.Arn
+      # 这里自动导入我们上一步建好的 VPC 子网！这就是 IaC 联动的魅力！
+      ResourcesVpcConfig:
+        SubnetIds: !Split [',', !ImportValue sl-cicd-PublicSubnets]
+
+  # 3. 给 EC2 打工人 (Worker Nodes) 发放通行证
+  NodeGroupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly # 允许 EC2 去 ECR 拉取我们的网站镜像
+
+  # 4. 创建托管节点组 (我们的 EC2 机器)
+  EKSNodeGroup:
+    Type: AWS::EKS::Nodegroup
+    DependsOn: EKSCluster # 必须等大脑建好，才能建四肢
+    Properties:
+      ClusterName: !Ref EKSCluster
+      NodeRole: !GetAtt NodeGroupRole.Arn
+      NodegroupName: sl-cicd-nodegroup
+      Subnets: !Split [',', !ImportValue sl-cicd-PublicSubnets]
+      InstanceTypes:
+        - t3.medium  # 推荐使用 t3.medium，配置太低跑 K8s 容易卡死
+      ScalingConfig:
+        MinSize: 1
+        DesiredSize: 2 # 我们要两台机器做高可用
+        MaxSize: 3

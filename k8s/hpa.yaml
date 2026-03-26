@@ -1,0 +1,18 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sl-cicd-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sl-cicd-app # 绑定我们刚才的 Deployment
+  minReplicas: 1      # 📉 没人访问时，最少留 1 个容器省钱
+  maxReplicas: 10     # 📈 流量爆发时，最多允许加到 10 个容器！
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50 # 🎯 核心触发器：只要平均 CPU 超过 50%，立刻加人！

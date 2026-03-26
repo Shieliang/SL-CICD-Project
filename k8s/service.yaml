@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sl-cicd-service
+spec:
+  type: LoadBalancer # 核心魔法：这会让 AWS 自动创建一个公网负载均衡器
+  selector:
+    app: sl-cicd-app
+  ports:
+    - protocol: TCP
+      port: 80       # 对外暴露的端口 (HTTP)
+      targetPort: 80 # 转发到容器内的端口
