@@ -1,0 +1,54 @@
+name: CI/CD Pipeline to AWS EKS
+
+# 1. 触发条件：当有代码 push 到 main 分支时，立刻干活！
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest # 给机器人分配一台免费的 Ubuntu 服务器
+
+    steps:
+    # 步骤 1：把你的最新代码拉取到机器人的服务器上
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v3
+
+    # 步骤 2：用你刚才存的保险柜钥匙，让机器人登录你的 AWS 账号
+    - name: 🔐 Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    # 步骤 3：登录到 AWS ECR 镜像仓库
+    - name: 🐳 Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    # 步骤 4：极其硬核的动态打包！(不再用写死的 v2，而是用每次提交的唯一哈希值做版本号)
+    - name: 🔨 Build, Tag, and Push Docker Image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: sl-cicd-repo
+        IMAGE_TAG: ${{ github.sha }} # 使用 Git 提交的哈希值作为独一无二的标签
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    # 步骤 5：让机器人连接到你的 EKS 集群大脑
+    - name: 🔌 Connect to Amazon EKS
+      run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name sl-cicd-cluster
+
+    # 步骤 6：通知 K8s 更新网页！(核心魔法)
+    - name: 🚀 Deploy to K8s and Update Image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: sl-cicd-repo
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        # 1. 先确保基础设施(Service, HPA 等)是最新的
+        kubectl apply -f k8s/
+        # 2. 强行命令 K8s 把应用容器替换成刚刚打包的最新版本镜像！
+        kubectl set image deployment/sl-cicd-app web=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
