@@ -10,7 +10,8 @@ STACK_NAME_CLUSTER ?= sl-cicd-cluster
 ECR_REPO_NAME ?= sl-cicd-repo
 
 # 你的 AWS 账号 ID 和完整 ECR 地
-AWS_ACCOUNT_ID ?= 987762561422
+# 利用 aws sts 命令动态获取当前环境的 12 位账号 ID，避免硬编码泄露隐私
+AWS_ACCOUNT_ID := $(shell aws sts get-caller-identity --query Account --output text)
 ECR_URI ?= $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME)
 IMAGE_TAG ?= v3
 
@@ -83,6 +84,8 @@ push-image: build-image
 deploy-app:
 	@echo "🚀 正在向 EKS 集群部署应用 (Deployment & Service)..."
 	kubectl apply -f k8s/
+	@echo "🔄 2/2 正在动态注入你的专属 ECR 镜像地址..."
+	kubectl set image deployment/sl-cicd-app web=$(ECR_URI):$(IMAGE_TAG)
 	@echo "⏳ 正在等待 AWS 分配 LoadBalancer 公网地址 (通常需要 2-3 分钟)..."
 	@echo "👉 请运行 'kubectl get svc sl-cicd-service' 来查看你的网站链接 (EXTERNAL-IP)！"
 
