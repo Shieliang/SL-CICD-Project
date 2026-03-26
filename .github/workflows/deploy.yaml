@@ -34,6 +34,7 @@ jobs:
         ECR_REPOSITORY: sl-cicd-repo
         IMAGE_TAG: ${{ github.sha }} # 使用 Git 提交的哈希值作为独一无二的标签
       run: |
+        cd app
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
