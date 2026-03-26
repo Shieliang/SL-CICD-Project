@@ -5,6 +5,12 @@ on:
   push:
     branches: [ "main" ]
 
+# 🔐 这里的权限设置就是 GitHub 建议的“最小特权”
+permissions:
+  contents: read      # 只需要读取代码来构建镜像
+  packages: write     # 如果你有用到 GitHub Packages (目前你用的是 ECR，可以不写)
+  id-token: write     # 如果你未来使用 OIDC 连接 AWS (更安全的做法)，这一项是必须的
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest # 给机器人分配一台免费的 Ubuntu 服务器
