@@ -85,11 +85,15 @@ make get-grafana-url
 
 
 ### 4. 📈 📊 Monitoring Cluster Health via Grafana
-Once logged into Grafana, navigate to these default dashboards to observe your cluster's behavior:
+Once logged into Grafana, do the following:
 
-- Kubernetes / Compute Resources / Cluster: Monitor overall CPU and Memory utilization across your EC2 worker nodes.
-- Kubernetes / Compute Resources / Namespace (Workloads): Track the real-time Pod count of your sl-cicd-app to verify HPA scaling.
-- Alertmanager / Status: View firing alerts (e.g., HighPodCount) being routed to your Telegram bot.
+1. Go to **Kubernetes / Compute Resources / Cluster**.
+2. In this dashboard, select the **CPU quota** panel and click the **default** tab to view the live pod usage breakdown.
+   - You will see the current number of running pods.
+   - When you run `make stress-test` or `make start-load-army-test`, corresponding load generator pods are created and reflected here.
+3. Go to **Alerting / Alert Rules**, and search for `highpodcount`.
+   - You will see a default rule (normal rule).
+   - When the number of `sl-cicd-app` pods exceeds 3, the rule changes from `normal` to `firing` and sends an alert to Telegram.
 
 ### 5. ⚔️ Stress Testing & Alert Validation
 To validate the auto-scaling architecture and the Telegram alerting pipeline, trigger a traffic load using two levels of intensity:
@@ -100,7 +104,7 @@ Level 1: Light Stress Test (Single Pod generator):
 make stress-test
 ```
 
-Level 2: Heavy "Load Army" Test (10-replica concurrent bombardment):
+Level 2: Heavy "Load Army" Test (20-replica concurrent bombardment):
 
 ```bash
 make start-load-army-test
@@ -110,7 +114,18 @@ Monitor the reaction:
 
 - Run `make status` to see the HPA triggering Pod scale-ups as CPU load crosses the 50% threshold.
 - Check your Telegram for "🚨 EKS Alert: HighPodCount" notifications.
-- Stop the heavy test with `make stop-load-army-test`.
+
+Stop commands:
+
+```bash
+# 1. Light stress test (run in foreground)
+#    Stop by pressing Ctrl+C in the same terminal
+make stress-test
+
+# 2. Heavy load army test
+#    Stop via Make target:
+make stop-load-army-test
+```
 
 ### 6. ☢️ Clean Up Resources (Nuclear Option)
 To avoid incurring unnecessary AWS charges, tear down the entire application, monitoring stack, ECR, EKS cluster, and VPC networking:

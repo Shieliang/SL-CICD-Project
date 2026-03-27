@@ -184,7 +184,7 @@ get-grafana-url:
 start-load-army-test:
 	@echo "⚔️ 正在组建压测大军 (10个并发 Pod 疯狂发包)..."
 	kubectl create deployment load-army --image=busybox -- /bin/sh -c "while true; do wget -q -O- http://sl-cicd-service; done" || true
-	kubectl scale deployment load-army --replicas=10
+	kubectl scale deployment load-army --replicas=20
 	@echo "🔥 火力全开！去盯着你的 Telegram，准备接收警报！"
 
 # 🛑 停止压测
