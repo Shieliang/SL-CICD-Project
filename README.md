@@ -91,11 +91,9 @@ Retrieve your Grafana admin credentials and the public dashboard URL to view rea
 make get-grafana-password
 make get-grafana-url
 ```
-
 > Paste your Grafana URL into the browser and log in:
 > - Username: `admin`
 > - Password: run `make get-grafana-password` to fetch the current admin password.
-
 
 ### 4. 📈 📊 Monitoring Cluster Health via Grafana
 Once logged into Grafana, do the following:
