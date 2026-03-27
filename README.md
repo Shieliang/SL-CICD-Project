@@ -3,7 +3,20 @@
 ## 🚀 Project Overview
 This project demonstrates a production-grade, highly available containerized web application deployed on **AWS Elastic Kubernetes Service (EKS)**. It features a fully automated **CI/CD pipeline** using **GitHub Actions**, implements dynamic scaling using **Kubernetes Horizontal Pod Autoscaler (HPA)**, and establishes full-stack observability with **Prometheus, Grafana, and Telegram alerting**. All underlying AWS infrastructure is strictly provisioned as code (IaC) using **AWS CloudFormation**.
 
-## 🏗️ Architecture & Tech Stack
+## 🏗️ Architecture
+- `make deploy-all` provisions VPC, EKS, ECR, and HPA configuration.
+- GitHub Actions builds and pushes Docker images to ECR, then updates Kubernetes deployment with `github.sha` tags.
+- Helm deploys kube-prometheus-stack (Prometheus + Grafana) for observability.
+- HPA scales pods based on CPU utilization (>50%).
+- Alertmanager routes warnings to a Telegram bot for rapid incident response.
+
+### Architecture Diagrams
+1. Setup flow (infrastructure and CI/CD):
+![Setup Diagram](asset/sl-cicd-project-setup-diagram.jpg)
+2. Runtime flow (user requests, HPA, monitoring, alerting):
+![User Interaction Diagram](asset/sl-cicd-project-user-diagram.jpg)
+
+## 🛠️ Tech Stack
 - **Cloud Provider:** Amazon Web Services (EKS, ECR, Elastic Load Balancing, VPC, IAM)
 - **Infrastructure as Code (IaC):** AWS CloudFormation, Helm
 - **Containerization:** Docker (Multi-stage builds, Alpine Linux)
